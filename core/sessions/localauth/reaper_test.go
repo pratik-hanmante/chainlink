@@ -1,4 +1,4 @@
-package sessions_test
+package localauth_test
 
 import (
 	"database/sql"
@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink/v2/core/logger"
 	"github.com/smartcontractkit/chainlink/v2/core/logger/audit"
 	"github.com/smartcontractkit/chainlink/v2/core/sessions"
+	"github.com/smartcontractkit/chainlink/v2/core/sessions/localauth"
 	"github.com/smartcontractkit/chainlink/v2/core/store/models"
 
 	"github.com/onsi/gomega"
@@ -33,9 +34,9 @@ func TestSessionReaper_ReapSessions(t *testing.T) {
 	db := pgtest.NewSqlxDB(t)
 	config := sessionReaperConfig{}
 	lggr := logger.TestLogger(t)
-	orm := sessions.NewORM(db, config.SessionTimeout().Duration(), lggr, pgtest.NewQConfig(true), audit.NoopLogger)
+	orm := localauth.NewORM(db, config.SessionTimeout().Duration(), lggr, pgtest.NewQConfig(true), audit.NoopLogger)
 
-	r := sessions.NewSessionReaper(db.DB, config, lggr)
+	r := localauth.NewSessionReaper(db.DB, config, lggr)
 	t.Cleanup(func() {
 		assert.NoError(t, r.Stop())
 	})

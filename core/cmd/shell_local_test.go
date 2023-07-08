@@ -20,7 +20,7 @@ import (
 	"github.com/smartcontractkit/chainlink/v2/core/logger"
 	"github.com/smartcontractkit/chainlink/v2/core/logger/audit"
 	"github.com/smartcontractkit/chainlink/v2/core/services/chainlink"
-	"github.com/smartcontractkit/chainlink/v2/core/sessions"
+	"github.com/smartcontractkit/chainlink/v2/core/sessions/localauth"
 	"github.com/smartcontractkit/chainlink/v2/core/store/dialects"
 	"github.com/smartcontractkit/chainlink/v2/core/store/models"
 	"github.com/smartcontractkit/chainlink/v2/core/utils"
@@ -53,7 +53,7 @@ func TestShell_RunNodeWithPasswords(t *testing.T) {
 			})
 			db := pgtest.NewSqlxDB(t)
 			keyStore := cltest.NewKeyStore(t, db, cfg.Database())
-			sessionORM := sessions.NewORM(db, time.Minute, logger.TestLogger(t), cfg.Database(), audit.NoopLogger)
+			sessionORM := localauth.NewORM(db, time.Minute, logger.TestLogger(t), cfg.Database(), audit.NoopLogger)
 
 			// Purge the fixture users to test assumption of single admin
 			// initialUser user created above
@@ -133,7 +133,7 @@ func TestShell_RunNodeWithAPICredentialsFile(t *testing.T) {
 				c.EVM[0].Nodes[0].HTTPURL = models.MustParseURL("http://fake.com")
 			})
 			db := pgtest.NewSqlxDB(t)
-			sessionORM := sessions.NewORM(db, time.Minute, logger.TestLogger(t), cfg.Database(), audit.NoopLogger)
+			sessionORM := localauth.NewORM(db, time.Minute, logger.TestLogger(t), cfg.Database(), audit.NoopLogger)
 
 			// Clear out fixture users/users created from the other test cases
 			// This asserts that on initial run with an empty users table that the credentials file will instantiate and
