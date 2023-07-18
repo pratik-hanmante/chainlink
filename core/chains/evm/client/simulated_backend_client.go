@@ -273,6 +273,10 @@ func (c *SimulatedBackendClient) BlockByHash(ctx context.Context, hash common.Ha
 	return c.b.BlockByHash(ctx, hash)
 }
 
+func (c *SimulatedBackendClient) LatestBlockByType(ctx context.Context, finalityType string) (*evmtypes.Head, error) {
+	panic("not implemented")
+}
+
 func (c *SimulatedBackendClient) LatestBlockHeight(ctx context.Context) (*big.Int, error) {
 	panic("not implemented")
 }

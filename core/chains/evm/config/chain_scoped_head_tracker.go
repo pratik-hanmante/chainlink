@@ -21,3 +21,14 @@ func (h *headTrackerConfig) MaxBufferSize() uint32 {
 func (h *headTrackerConfig) SamplingInterval() time.Duration {
 	return h.c.SamplingInterval.Duration()
 }
+
+func (h *headTrackerConfig) TotalHeadsLimit() int {
+	return *h.c.TotalHeadsLimit
+}
+
+func (h *headTrackerConfig) PersistHeads() bool {
+	return *h.c.PersistHeads
+}
+func (h *headTrackerConfig) CanonicalChainRule() string {
+	return *h.c.CanonicalChainRule
+}

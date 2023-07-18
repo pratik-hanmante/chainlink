@@ -31,12 +31,26 @@ func (h *headTrackerConfig) MaxBufferSize() uint32 {
 	return uint32(0)
 }
 
+func (h *headTrackerConfig) PersistHeads() bool {
+	return true
+}
+
+func (h *headTrackerConfig) TotalHeadsLimit() int {
+	return 300
+}
+
+func (h *headTrackerConfig) CanonicalChainRule() string {
+	return "LongestChain"
+}
+
 type config struct {
 	finalityDepth                     uint32
+	finalityTag                       bool
 	blockEmissionIdleWarningThreshold time.Duration
 }
 
 func (c *config) FinalityDepth() uint32 { return c.finalityDepth }
+func (c *config) FinalityTag() bool { return c.finalityTag }
 func (c *config) BlockEmissionIdleWarningThreshold() time.Duration {
 	return c.blockEmissionIdleWarningThreshold
 }
@@ -57,7 +71,7 @@ func TestHeadSaver_Save(t *testing.T) {
 	saver, _ := configureSaver(t)
 
 	head := cltest.Head(1)
-	err := saver.Save(testutils.Context(t), head)
+	err := saver.SaveHead(testutils.Context(t), head)
 	require.NoError(t, err)
 
 	latest, err := saver.LatestHeadFromDB(testutils.Context(t))

@@ -59,6 +59,9 @@ type HeadTracker interface {
 	HistoryDepth() uint32
 	MaxBufferSize() uint32
 	SamplingInterval() time.Duration
+	TotalHeadsLimit() int
+	PersistHeads() bool
+	CanonicalChainRule() string
 }
 
 type BalanceMonitor interface {

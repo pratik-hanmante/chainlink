@@ -12,10 +12,9 @@ import (
 //go:generate mockery --quiet --name HeadTracker --output ../mocks/ --case=underscore
 type HeadTracker[H Head[BLOCK_HASH], BLOCK_HASH Hashable] interface {
 	services.ServiceCtx
-	// Backfill given a head will fill in any missing heads up to the given depth
-	// (used for testing)
-	Backfill(ctx context.Context, headWithChain H, depth uint) (err error)
-	LatestChain() H
+	// Backfill given a head and the latest finalized, backfills every head in between creating a complete chain.
+	Backfill(ctx context.Context, headWithChain H, latestFinalized H) (err error)
+	LatestCanonicalChain() H
 }
 
 // HeadTrackable is implemented by the core txm,
@@ -27,16 +26,18 @@ type HeadTrackable[H Head[BLOCK_HASH], BLOCK_HASH Hashable] interface {
 	OnNewLongestChain(ctx context.Context, head H)
 }
 
-// HeadSaver is an chain agnostic interface for saving and loading heads
+// HeadSaver is an chain agnostic interface that stores the latest canonical chain from a given finalized head. It can also store potential forks.  
 // Different chains will instantiate generic HeadSaver type with their native Head and BlockHash types.
 type HeadSaver[H Head[BLOCK_HASH], BLOCK_HASH Hashable] interface {
-	// Save updates the latest block number, if indeed the latest, and persists
-	// this number in case of reboot.
-	Save(ctx context.Context, head H) error
-	// Load loads latest EvmHeadTrackerHistoryDepth heads, returns the latest chain.
-	Load(ctx context.Context) (H, error)
-	// LatestChain returns the block header with the highest number that has been seen, or nil.
-	LatestChain() H
+	// SaveHead stores a single head and prunes every head before the latest finalized.  
+	// There is an option to mark the head as the latest of the canonical chain. Persists head into store if enabled.
+	SaveHead(ctx context.Context, head H, latestCanonical bool, latestFinalized H) error
+	// Load loads heads from storage starting from the latest finalized head and returns total number retrieved.
+	LoadHeads(ctx context.Context, latestFinalized H) (int, error)
+	// LatestCanonicalChain returns the latest canonical block header, or nil.
+	LatestCanonicalHead() H
+	// LatestFinalized returns the latest finalized block header, or nil.
+	LatestFinalizedHead() H
 	// Chain returns a head for the specified hash, or nil.
 	Chain(hash BLOCK_HASH) H
 }

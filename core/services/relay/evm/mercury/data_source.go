@@ -270,7 +270,7 @@ func (ds *datasource) getCurrentBlock(ctx context.Context) (*evmtypes.Head, erro
 	// it doesn't make any external network requests, and it is the
 	// headtracker's job to ensure it has an up-to-date view of the chain based
 	// on responses from all available RPC nodes
-	latestHead := ds.chainHeadTracker.HeadTracker().LatestChain()
+	latestHead := ds.chainHeadTracker.HeadTracker().LatestCanonicalChain()
 	if latestHead == nil {
 		logger.Sugared(ds.lggr).AssumptionViolation("HeadTracker unexpectedly returned nil head, falling back to RPC call")
 		var err error

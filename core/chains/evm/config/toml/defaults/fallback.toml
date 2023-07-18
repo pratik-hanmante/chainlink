@@ -52,6 +52,9 @@ TransactionPercentile = 60
 HistoryDepth = 100
 MaxBufferSize = 3
 SamplingInterval = '1s'
+TotalHeadsLimit = 300
+PersistHeads = true
+CanonicalChainRule = 'LongestChain'
 
 [NodePool]
 PollFailureThreshold = 5

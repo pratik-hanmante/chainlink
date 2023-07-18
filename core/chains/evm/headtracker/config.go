@@ -12,6 +12,7 @@ import (
 type Config interface {
 	BlockEmissionIdleWarningThreshold() time.Duration
 	FinalityDepth() uint32
+	FinalityTag() bool
 }
 
 type HeadTrackerConfig interface {
