@@ -32,7 +32,7 @@ abstract contract FunctionsBilling is Routable, IFunctionsBilling {
     uint256 gasOverhead;
     uint256 timestamp;
   }
-  mapping(bytes32 => Commitment) /* requestID */ /* Commitment */ private s_requestCommitments;
+  mapping(bytes32 => bytes32) /* requestID */ /* Commitment */ private s_requestCommitments;
 
   event RequestTimedOut(bytes32 indexed requestId);
 
@@ -319,7 +319,7 @@ abstract contract FunctionsBilling is Routable, IFunctionsBilling {
       s_config.gasOverheadBeforeCallback + s_config.gasOverheadAfterCallback,
       block.timestamp
     );
-    s_requestCommitments[requestId] = commitment;
+    s_requestCommitments[requestId] = keccak256(abi.encode(commitment));
 
     emit BillingStart(requestId, commitment);
 
@@ -350,16 +350,12 @@ abstract contract FunctionsBilling is Routable, IFunctionsBilling {
   function _fulfillAndBill(
     bytes32 requestId,
     bytes memory response,
-    bytes memory err
-  )
-    internal
-    returns (
-      /* bytes calldata metadata, */
-      FulfillResult
-    )
-  {
-    Commitment memory commitment = s_requestCommitments[requestId];
-    if (commitment.don == address(0)) {
+    bytes memory err,
+    bytes memory onchainMetadata,
+    bytes memory offchainMetadata
+  ) internal returns (FulfillResult) {
+    (bytes32 commitmentHash, Commitment memory commitment) = _retrieveCommitmentData(onchainMetadata);
+    if (s_requestCommitments[requestId] != commitmentHash) {
       return FulfillResult.INVALID_REQUEST_ID;
     }
     delete s_requestCommitments[requestId];
@@ -372,8 +368,7 @@ abstract contract FunctionsBilling is Routable, IFunctionsBilling {
     // (1e18 juels/link) * (gas/wei) / (wei/link) = juels per wei
     uint256 juelsPerGas = (1e18 * tx.gasprice) / uint256(weiPerUnitLink);
     // Gas overhead without callback
-    uint96 gasOverheadJuels = uint96(juelsPerGas * commitment.gasOverhead);
-    uint96 costWithoutFulfillment = gasOverheadJuels + commitment.donFee;
+    uint96 costWithoutFulfillment = uint96(juelsPerGas * commitment.gasOverhead) + commitment.donFee;
 
     // The Functions Router will perform the callback to the client contract
     IFunctionsRouter router = IFunctionsRouter(address(s_router));
@@ -387,7 +382,7 @@ abstract contract FunctionsBilling is Routable, IFunctionsBilling {
     );
 
     // Reimburse the transmitter for the fulfillment gas cost
-    s_withdrawableTokens[msg.sender] = gasOverheadJuels + callbackCostJuels;
+    s_withdrawableTokens[msg.sender] = uint96(juelsPerGas * commitment.gasOverhead) + callbackCostJuels;
     // Put donFee into the pool of fees, to be split later
     // Saves on storage writes that would otherwise be charged to the user
     s_feePool += commitment.donFee;
@@ -396,12 +391,45 @@ abstract contract FunctionsBilling is Routable, IFunctionsBilling {
       requestId,
       commitment.subscriptionId,
       commitment.donFee,
-      gasOverheadJuels + callbackCostJuels,
-      gasOverheadJuels + callbackCostJuels + commitment.donFee + commitment.adminFee,
+      uint96(juelsPerGas * commitment.gasOverhead) + callbackCostJuels,
+      uint96(juelsPerGas * commitment.gasOverhead) + callbackCostJuels + commitment.donFee + commitment.adminFee,
       FulfillResult(result)
     );
 
     return FulfillResult(result);
+  }
+
+  /**
+   * @notice Generate a keccak hash request ID
+   */
+  function _retrieveCommitmentData(
+    bytes memory onchainData
+  ) private pure returns (bytes32 commitmentHash, Commitment memory commitment) {
+    (
+      uint64 subscriptionId,
+      address client,
+      uint32 callbackGasLimit,
+      uint256 expectedGasPrice,
+      address don,
+      uint96 donFee,
+      uint96 adminFee,
+      uint96 estimatedTotalCostJuels,
+      uint256 gasOverhead,
+      uint256 timestamp
+    ) = abi.decode(onchainData, (uint64, address, uint32, uint256, address, uint96, uint96, uint96, uint256, uint256));
+    commitment = Commitment(
+      subscriptionId,
+      client,
+      callbackGasLimit,
+      expectedGasPrice,
+      don,
+      donFee,
+      adminFee,
+      estimatedTotalCostJuels,
+      gasOverhead,
+      timestamp
+    );
+    commitmentHash = keccak256(abi.encode(commitment));
   }
 
   // ================================================================
@@ -411,9 +439,8 @@ abstract contract FunctionsBilling is Routable, IFunctionsBilling {
    * @inheritdoc IFunctionsBilling
    */
   function deleteCommitment(bytes32 requestId) external override onlyRouter returns (bool) {
-    Commitment memory commitment = s_requestCommitments[requestId];
     // Ensure that commitment exists
-    if (commitment.don == address(0)) {
+    if (s_requestCommitments[requestId] == bytes32(0)) {
       return false;
     }
     // Delete commitment

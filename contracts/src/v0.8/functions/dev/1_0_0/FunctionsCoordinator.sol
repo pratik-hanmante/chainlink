@@ -200,24 +200,25 @@ contract FunctionsCoordinator is OCR2Base, IFunctionsCoordinator, FunctionsBilli
     bytes32[] memory requestIds;
     bytes[] memory results;
     bytes[] memory errors;
-    (
-      requestIds,
-      results,
-      errors
-      /*metadata, TODO: usage metadata through report*/
-    ) = abi.decode(report, (bytes32[], bytes[], bytes[]));
-    if (requestIds.length == 0 || requestIds.length != results.length || requestIds.length != errors.length) {
+    bytes[] memory onchainMetadata;
+    bytes[] memory offchainMetadata;
+    (requestIds, results, errors, onchainMetadata, offchainMetadata) = abi.decode(
+      report,
+      (bytes32[], bytes[], bytes[], bytes[], bytes[])
+    );
+    if (
+      requestIds.length == 0 ||
+      requestIds.length != results.length ||
+      requestIds.length != errors.length ||
+      requestIds.length == onchainMetadata.length ||
+      requestIds.length == offchainMetadata.length
+    ) {
       revert ReportInvalid();
     }
 
     for (uint256 i = 0; i < requestIds.length; i++) {
       FulfillResult result = FulfillResult(
-        _fulfillAndBill(
-          requestIds[i],
-          results[i],
-          errors[i]
-          /* metadata[i], */
-        )
+        _fulfillAndBill(requestIds[i], results[i], errors[i], onchainMetadata[i], offchainMetadata[i])
       );
 
       if (result == FulfillResult.USER_SUCCESS || result == FulfillResult.USER_ERROR) {
