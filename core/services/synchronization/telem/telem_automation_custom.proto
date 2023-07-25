@@ -6,7 +6,7 @@ package telem;
 
 message BlockNumber {
     string node_id = 1;
-    uint64 timetsamp = 2;
+    uint64 timestamp = 2;
     uint64 block_number = 3;
     string block_hash = 4;
 }
@@ -15,6 +15,13 @@ message NodeVersion {
     string node_id = 1;
     uint64 timestamp = 2;
     uint32 node_version = 3;
+}
+
+message AutomationTelemWrapper{
+    oneof msg {
+        BlockNumber block_number = 1;
+        NodeVersion node_version = 2;
+    }
 }
 
 // // StreamsLookup contains the metadata about a mercury request
