@@ -61,6 +61,7 @@ import (
 	evmrelaytypes "github.com/smartcontractkit/chainlink/v2/core/services/relay/evm/types"
 	"github.com/smartcontractkit/chainlink/v2/core/services/synchronization"
 	"github.com/smartcontractkit/chainlink/v2/core/services/telemetry"
+	"github.com/smartcontractkit/chainlink/v2/core/static"
 	"github.com/smartcontractkit/chainlink/v2/core/utils"
 	"github.com/smartcontractkit/chainlink/v2/plugins"
 )
@@ -938,10 +939,28 @@ func (d *Delegate) newServicesOCR2Keepers(
 		d.cfg.JobPipeline().MaxSuccessfulRuns(),
 	)
 
-	var chain evm.Chain
+	// get the chain from the config
+	chainID, err2 := spec.RelayConfig.EVMChainID()
+	if err2 != nil {
+		return nil, errors.Wrap(err2, "ChainID did not get")
+	}
+	chain, err2 := d.chainSet.Get(big.NewInt(chainID))
+	if err2 != nil {
+		return nil, errors.Wrap(err2, "ErrNoChainFromSpec")
+	}
+
 	hb := chain.HeadBroadcaster()
 	endpoint := d.monitoringEndpointGen.GenMonitoringEndpoint(spec.ContractID, synchronization.AutomationCustom)
-	customTelemService := ocr2keeper.NewAutomationCustomTelemetryService(endpoint, hb)
+	customTelemLogger, _ := logger.NewLogger()
+	version := static.Version
+	customTelemService := ocr2keeper.NewAutomationCustomTelemetryService(
+		endpoint,
+		hb,
+		make(chan struct{}),
+		customTelemLogger,
+		&jb,
+		version,
+	)
 
 	return []job.ServiceCtx{
 		job.NewServiceAdapter(runr),
