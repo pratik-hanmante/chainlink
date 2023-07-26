@@ -956,9 +956,7 @@ func (d *Delegate) newServicesOCR2Keepers(
 	customTelemService := ocr2keeper.NewAutomationCustomTelemetryService(
 		endpoint,
 		hb,
-		make(chan struct{}),
-		customTelemLogger,
-		&jb,
+		customTelemLogger.Named("Automation Custom Telem"),
 		version,
 	)
 
