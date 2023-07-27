@@ -950,11 +950,10 @@ func (d *Delegate) newServicesOCR2Keepers(
 
 	hb := chain.HeadBroadcaster()
 	endpoint := d.monitoringEndpointGen.GenMonitoringEndpoint(spec.ContractID, synchronization.AutomationCustom)
-	customTelemLogger, _ := logger.NewLogger()
 	customTelemService := ocr2keeper.NewAutomationCustomTelemetryService(
 		endpoint,
 		hb,
-		customTelemLogger,
+		lggr,
 	)
 
 	return []job.ServiceCtx{
