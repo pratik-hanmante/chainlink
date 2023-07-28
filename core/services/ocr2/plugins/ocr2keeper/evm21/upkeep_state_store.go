@@ -12,6 +12,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 
 	"github.com/smartcontractkit/chainlink/v2/core/logger"
+	"github.com/smartcontractkit/chainlink/v2/core/services/ocr2/plugins/ocr2keeper/evm21/logprovider"
 )
 
 const BlockKeySeparator = "|"
@@ -21,11 +22,6 @@ type upkeepState struct {
 	state    *ocr2keepers.UpkeepState
 	block    int64
 	upkeepId string
-}
-
-type UpkeepStateReader interface {
-	// SelectByUpkeepIDsAndBlockRange retrieves upkeep states for provided upkeep ids and block range, the result is currently not in particular order
-	SelectByUpkeepIDsAndBlockRange(upkeepIds []*big.Int, start, end int64) ([]*ocr2keepers.UpkeepPayload, []*ocr2keepers.UpkeepState, error)
 }
 
 type UpkeepStateUpdater interface {
@@ -38,6 +34,9 @@ type UpkeepStateStore struct {
 	states     []*upkeepState
 	lggr       logger.Logger
 }
+
+var _ UpkeepStateUpdater = &UpkeepStateStore{}
+var _ logprovider.UpkeepStateReader = &UpkeepStateStore{}
 
 // NewUpkeepStateStore creates a new state store. This is an initial version of this store. More improvements to come:
 // TODO: AUTO-4027
