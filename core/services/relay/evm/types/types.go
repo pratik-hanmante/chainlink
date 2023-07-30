@@ -42,11 +42,20 @@ type FunctionsProvider interface {
 }
 
 type OracleRequest struct {
-	// TODO: define
+	RequestId          [32]byte
+	RequestingContract common.Address
+	RequestInitiator   common.Address
+	SubscriptionId     uint64
+	SubscriptionOwner  common.Address
+	Data               []byte
+	DataVersion        uint16
+	Flags              [32]byte
+	CallbackGasLimit   uint64
 }
 
 type OracleResponse struct {
-	// TODO: define
+	RequestId   [32]byte
+	Transmitter common.Address
 }
 
 type RouteUpdateSubscriber interface {
